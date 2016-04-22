@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 /* Program that satisfies the Challenge 1A of Bioinformatics Algorithms: An Active L
  * Learning Approach, 2nd Ed, Vol1, by Phillip Compeau and Pavel Pevzner.
@@ -25,11 +26,22 @@ int main(int argc, char **argv)
         printf("File count not be opened or found!\n");
         return 1;
       }
+    int datades = fileno(dataset); // obtain data file descriptor from the data file pointer
+    struct stat f_info; // declare a stat structure to hold info about file
+    fstat(datades, &f_info); // get the data file information from filedescriptor, and store it in stat structure
+    // Dynamically allocate memory DNA text based on the size of the file 
+    // since we directly pass the file sizing info, f_info.st_size, to malloc()
+    // there is no need to perform sizeof(f_info.st_size) call on passing it in
+    // As most of the contriubtion to file size comes from the dna text itself, it
+    // should not be too naive to say that dna_text array be allocated a space that 
+    // is equal to the size of the file.
+    char * dna_text = (char *) malloc(f_info.st_size);
+    // Should be safe to assume DNA pattern is about 100 characters long, but we may
+    // need to modify it depending on the search we want to perform. in_label and 
+    // out_label just hold the fix labels that we will need to read in from
+    // the file and are known beforehand to take up this fixed number of characters.
+    char  in_label[5], dna_pattern[100], out_label[6];
 
-    //TODO: Use malloc to assign space for these arrays, challenge is that 
-    // I don't even know how I can even give "soft coded" value for their sizes
-    // in advance before reading in the input file...
-    char  in_label[1000], dna_text[10000], dna_pattern[1000], out_label[1000];
     int  gold_count=0;
     int file_object_count;    
 
@@ -55,14 +67,14 @@ int main(int argc, char **argv)
     //printf("The count looks like %d\n", count);
     int my_count = 0;
     my_count = PatternCount(dna_text,dna_pattern);
-    
+    free(dna_text);
     if(my_count == gold_count)
       printf("My count is %d which equals the gold count of %d! Correct!\n", my_count, gold_count);
     else
       printf("My count does not match the gold count!\n");
   }
   
-  // If no input file is provided, then we directly use the hardcoded arrays
+  // If no input file is provided, then we directly use hardcoded arrays
   else 
   {
     printf("No input file provided, proceeding to use hardcoded array in the source code.\n");
