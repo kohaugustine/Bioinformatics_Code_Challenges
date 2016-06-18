@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include "vector.h"
 
 int PatternCount(char text[], char pattern[]);
-char * Text(char text[], char k_mer[], int pos, int k); 
-
+char * Text(char text[], int pos, int k); 
+vector_t * FrequentWords(char text[], int k);   
 
 int main(int argc, char **argv)
 {
@@ -35,7 +36,7 @@ int main(int argc, char **argv)
     // the file and are known beforehand to take up this fixed number of characters.
 
     // Size of identified DNA seqs is as such because we need to account for the spaces too
-    char  in_label[5], dna_pattern[100], out_label[5] ;
+    char  in_label[5], out_label[5] ;
     char id_dna_seqs[14][13]; // Make sure to store 13, and not 12 characters because on more character is needed for null termination
 
     // size of k-mer that we want to identify
@@ -64,7 +65,7 @@ int main(int argc, char **argv)
       return 1;
     }
 
-    
+    vector_t * frequentpat = FrequentWords(dna_text, k_size);
 
     //printf("The input label looks like %s\n", in_label);
     //printf("The dna text looks like %s\n", dna_text);
@@ -73,6 +74,7 @@ int main(int argc, char **argv)
     //printf("The count looks like %d\n", count);
 
     // TODO: Correct the below checking code
+    /*
     int my_count = 0;
     my_count = PatternCount(dna_text,dna_pattern);
     free(dna_text);
@@ -80,59 +82,95 @@ int main(int argc, char **argv)
       printf("My count is %d which equals the gold count of %d! Correct!\n", my_count, gold_count);
     else
       printf("My count does not match the gold count!\n");
+    */ 
+    
+    // Just for a brief test, we just print out all the contents of
+    // freqpat_arr of each of its strings
+    // just print out this one element see if it matches any of the outputs  
+    printf("This is what all of the vector_t elements look like!\n");
+    int i=0;
+    for(i=0; i<=41; i++)
+    {
+      printf("%s\n", frequentpat->array[i]);
+      // TODO: Figure out why when printing out the frequent patterns strings, that 
+      // some of the strings would still have wierd characters trailing behind them
+      // that vary each time I run my program. Could it have to do with the sizing issue
+      // not taking into account space needed for null character?
+    }
   }
   
   // If no input file is provided, then we directly use hardcoded arrays
-  else 
-  {
+  //else 
+  //{
 
   // TODO: Implement hardcoded arrays here, see the challenge qn PDF 
   
-  }
+  //}
   
 return 0;
 }
 
 
-int FrequentWords(text[], k)
+vector_t * FrequentWords(char text[], int k)
 // Implementation closely follows the pseudocode
 {
-
-  //TODO: think of how to implement a dynamically grown array for holding frequent patterns
+  // In think of how to implement a dynamically grown array for holding frequent patterns
   // Try using http://stackoverflow.com/questions/3536153/c-dynamically-growing-array
-  // and this reminds me of ECE220, so go and relook at the past labs
-  // and scavenge that code to create my knowledge base!
-  char ** freqpattern = (char **)malloc(sizeof(char) * (strlen(text)));
+  // I was reminded me of ECE220, and so I reused the code from lab 9 but had to modify
+  // the vector struct to handle strings instead of simple integers
+  vector_t * freqpat_arr = createVector(1, k);
 
-  int i;
-  char * pattern  = (char *)malloc(sizeof(k));
+  unsigned int i;
+  //char * pattern  = (char *)malloc(sizeof(k));
+  // We need to declare a k_pattern array for the sole purpose of allowing the 
+  // Text() function to be able to return us the k_pattern we want to access
+  // see BA1A/PatternCount.c for the justification
+  //char * k_pattern = (char *)malloc(sizeof(k));
   int * count = (int *)malloc(sizeof(int) * (strlen(text) - k +1));
-  for(i = 0; i<= strlen(text) - k; i++)
+  for(i = 0; i<= (strlen(text)/sizeof(char)) - k; i++)
   {
-      pattern = Text(i, k);
+      char * pattern = Text(text, i, k);
       count[i] = PatternCount(text, pattern);
   }
 
-  //TODO: Ideintify the largest integer value in the count array, need to write function for finding that maximum
   int maxcount = count[0];
-  // can reuse the variable i again?
+  
   // Naive implementation of finding max value in array
-  for(i = 0; i< strlen(text)-k+1; i++)
+  // Simple remark: I can reuse the iteration variable i here again without 
+  // declaring another separate variable
+  for(i = 0; i< (strlen(text)/sizeof(char))-k+1; i++)
   {
     if(maxcount < count[i])
       maxcount = count[i];
   }
 
-  for(i=0; i< strlen(text)-k+1; i++)
+  
+  // Loop for adding the identified frequent patterns into our collection array
+  for(i=0; i< (strlen(text)/sizeof(char))-k+1; i++)
   {
+    // TODO: fix the bug that causes freqpat_arr to be filled with only one pattern
+    // when I should have pushed multiple patterns into the vector
+    // somehow it seems like when a new string is pushed unto the top of the vector
+    // all the previous strings that were pushed, no matter what they were, get 
+    // overwritted to become last string that got pushed...
     if(count[i] == maxcount)
+    {
+      char * freqpat = Text(text, i ,k);
+      printf("Found frequent pattern: %s, adding it to freqpat_arr.\n", freqpat);
+      push_back(freqpat_arr, freqpat);
       
-  }
+    }
 
+  }
+  //TODO: Implement removal of duplicate frequent pattern strings from the frequent
+  // pattern array
+  
+  return freqpat_arr;
 }
 
 
 // Reusing the PatternCount function from problem BA1A
+
 int PatternCount(char text[], char pattern[])
 /* Function accepts a complete DNA sequence, which is char array text[] and
  * the pattern array which we want to identify for k-mer, which is char array
@@ -151,28 +189,32 @@ int PatternCount(char text[], char pattern[])
    * the char string k_mer, the char values in it had changed by the time
    * I make use of it within this PatternCount function.
    * */
-  char * k_mer = (char *)malloc(strlen(pattern)+1);
-  int i;  // iteration variable that indicates the position on DNA seq in current iteration
-  for(i=0; i<= strlen(text) - strlen(pattern); i++)
+  unsigned int i;  // iteration variable that indicates the position on DNA seq in current iteration
+  //TODO: Figure out why the compiler gives me a warning here if I don't declare
+  // i as unsigned... in problem BA1A, I didn't need to declare as unsigned, and 
+  // still would not get error...
+  for(i=0; i<= (strlen(text)/sizeof(char) - strlen(pattern)/sizeof(char)); i++)
   {
-    if( strcmp(Text(text, k_mer, i, strlen(pattern)), pattern) == 0)
+    char * k_str = Text(text, i, strlen(pattern));
+    if( strcmp(k_str, pattern) == 0)
       count++;
     else
       continue;
+    free(k_str); //After each iteration, we gonna generate a new k_str from a new index, so free the no longer needed current k_str
   }
-  free(k_mer); // remember to free up the memory here, a safe thing to do since I no longer need my k_mer array
   return count;
 }
 
 // Text() is a helper function for PatternCount()
-char * Text(char text[], char k_mer[], int pos, int k)
-/* Function input accepts pointer to a DNA char array, text, a k-mer char array, 
- * k_mer, the position along text, and length of the k_mer pattern
- *  Returns a pointer to a sub-sequence of characters bounded between indexes
+char * Text(char text[], int pos, int k)
+/* Function input accepts pointer to a DNA char array, text, the position along text, 
+ * pos, and length of the k_mer pattern, k
+ *  Returns a pointer to a sub-sequence of bouded between indexes
  *  pos and pos+k-1.
  */
 {
   int i;
+  char * k_mer = (char *)malloc((k + 1)*sizeof(char));
   for(i=0; i<= k-1; i++)
   {
     k_mer[i] = text[pos+i];
@@ -182,3 +224,4 @@ char * Text(char text[], char k_mer[], int pos, int k)
   }
   return k_mer;
 }
+

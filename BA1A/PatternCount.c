@@ -13,7 +13,7 @@
  * */ 
 
 int PatternCount(char text[], char pattern[]);
-char * Text(char text[], char k_mer[], int pos, int k); 
+char * Text(char text[], int pos, int k); 
 
 int main(int argc, char **argv)
 {
@@ -114,28 +114,30 @@ int PatternCount(char text[], char pattern[])
    * the char string k_mer, the char values in it had changed by the time
    * I make use of it within this PatternCount function.
    * */
-  char * k_mer = (char *)malloc(strlen(pattern)+1);
+  //char * k_mer = (char *)malloc(strlen(pattern)+1);
   int i;  // iteration variable that indicates the position on DNA seq in current iteration
-  for(i=0; i<= strlen(text) - strlen(pattern); i++)
+  for(i=0; i<= (strlen(text)/sizeof(char) - strlen(pattern)/sizeof(char)); i++)
   {
-    if( strcmp(Text(text, k_mer, i, strlen(pattern)), pattern) == 0)
+    char * k_str = Text(text, i, strlen(pattern));
+    if( strcmp(k_str, pattern) == 0)
       count++;
     else
       continue;
+    free(k_str); //After each iteration, we gonna generate a new k_str from a new index, so free the no longer needed current k_str
   }
-  free(k_mer); // remember to free up the memory here, a safe thing to do since I no longer need my k_mer array
   return count;
 }
 
 // Text() is a helper function for PatternCount()
-char * Text(char text[], char k_mer[], int pos, int k)
-/* Function input accepts pointer to a DNA char array, text, a k-mer char array, 
- * k_mer, the position along text, and length of the k_mer pattern
+char * Text(char text[], int pos, int k)
+/* Function input accepts pointer to a DNA char array, text, the position along text, 
+ * pos, and length of the k_mer pattern, k
  *  Returns a pointer to a sub-sequence of bouded between indexes
  *  pos and pos+k-1.
  */
 {
   int i;
+  char * k_mer = (char *)malloc((k + 1)*sizeof(char));
   for(i=0; i<= k-1; i++)
   {
     k_mer[i] = text[pos+i];
