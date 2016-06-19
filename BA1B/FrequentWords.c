@@ -220,7 +220,7 @@ char * Text(char text[], int pos, int k)
     k_mer[i] = text[pos+i];
     //printf("iteration: %d, k_mer: %c\n", i,k_mer[i]);
     if(i == k-1)
-      k_mer[k+1] = '\0';
+      k_mer[k] = '\0';
   }
   return k_mer;
 }
