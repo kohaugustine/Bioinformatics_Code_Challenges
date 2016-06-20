@@ -8,7 +8,6 @@
 typedef struct {
     int size;
     int maxSize;
-    int k_size; // This is the k-mer size 
     // the array variable is a pointer to an array of string character pointers
     // basically an array of pointers. This gives us the flexibility of not needing
     // forming an array of objects whose sizes we may not know now (but only later,
@@ -18,7 +17,7 @@ typedef struct {
     char ** array;
 } vector_t;
 
-vector_t * createVector(int initialSize, int k);
+vector_t * createVector(int initialSize);
 void destroyVector(vector_t * vector);
 void resize(vector_t * vector);
 void push_back(vector_t * vector, char * string);

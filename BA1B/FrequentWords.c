@@ -53,8 +53,7 @@ int main(int argc, char **argv)
     // I needed to allocate space for null termination, see http://stackoverflow.com/questions/37632857/difficulty-in-reading-a-series-of-whitespace-separated-dna-string-into-different?noredirect=1#comment62747735_37632857
     int file_object_count_2 = fscanf(dataset, "%s %s %s %s %s %s %s %s %s %s %s %s %s %s", id_dna_seqs[0], id_dna_seqs[1], id_dna_seqs[2], id_dna_seqs[3], id_dna_seqs[4], id_dna_seqs[5], id_dna_seqs[6], id_dna_seqs[7], id_dna_seqs[8], id_dna_seqs[9], id_dna_seqs[10], id_dna_seqs[11], id_dna_seqs[12], id_dna_seqs[13]);
 
-    //printf("%s\n", id_dna_seqs[5]);
-    
+   
     if(file_object_count_1 + file_object_count_2== 18)
     {
       printf("Successfully read in all the file contents!\n");
@@ -68,51 +67,47 @@ int main(int argc, char **argv)
 
     vector_t * frequentpat = FrequentWords(dna_text, k_size);
 
-    //printf("The input label looks like %s\n", in_label);
-    //printf("The dna text looks like %s\n", dna_text);
-    //printf("The dna pattern looks like %s\n", dna_pattern);
-    //printf("The out label looks like %s\n", dna_pattern);
-    //printf("The count looks like %d\n", count);
-
-    // TODO: Correct the below checking code
-    /*
-    int my_count = 0;
-    my_count = PatternCount(dna_text,dna_pattern);
-    free(dna_text);
-    if(my_count == gold_count)
-      printf("My count is %d which equals the gold count of %d! Correct!\n", my_count, gold_count);
-    else
-      printf("My count does not match the gold count!\n");
-    */ 
-    
-    // Just for a brief test, we just print out all the contents of
-    // freqpat_arr of each of its strings
-    // just print out this one element see if it matches any of the outputs  
-    printf("This is what all of the vector_t elements look like!\n");
-    int i=0;
+    printf("This is what final frequent patterns array looks like!\n");
+    int match_count = 0;
+    int i,j;
     for(i=0; i<=frequentpat->size-1 ; i++)
     {
       printf("%s\n", frequentpat->array[i]);
+      // Now we check our answer with the golden output
     }
-    
-    printf("This is what the array looks like with duplicates removed!\n");
-    vector_t * freqpat_no_dup = RemoveDuplicates(frequentpat);
-    printf("Size of no duplicates array: %d\n", freqpat_no_dup->size);
-    for(i=0; i<= freqpat_no_dup->size -1; i++)
+    printf("Now we'll check this with the golden output!\n");
+    if(frequentpat->size == 14)
     {
-      printf("%s\n", freqpat_no_dup->array[i]);
+      printf("The size matches!\n");
+      for(i=0; i<=frequentpat->size-1 ; i++)
+      {      
+        for(j=0;j<=13;j++)
+        {
+          if(strcmp(frequentpat->array[i], id_dna_seqs[j])==0)
+            match_count++;
+        }
+      }
     }
-    
+    else
+    {
+      printf("Size does not match!\n");
+      return 1;
+    }
+    if(match_count == 14)
+      printf("We got perfect match for each and every string! Code is correct!\n");
+    else
+    {
+      printf("We did not get perfect match for each element!\n");
+      return 1;
+    }
+    destroyVector(frequentpat);  
   }
-  
-  // If no input file is provided, then we directly use hardcoded arrays
-  //else 
-  //{
+  else
+  {
+    printf("No input file provided! Please provide input file!\n");
+    return 1;
+  }
 
-  // TODO: Implement hardcoded arrays here, see the challenge qn PDF 
-  
-  //}
-  
 return 0;
 }
 
@@ -124,26 +119,26 @@ vector_t * FrequentWords(char text[], int k)
   // Try using http://stackoverflow.com/questions/3536153/c-dynamically-growing-array
   // I was reminded me of ECE220, and so I reused the code from lab 9 but had to modify
   // the vector struct to handle strings instead of simple integers
-  vector_t * freqpat_arr = createVector(1, k);
-
+  vector_t * freqpat_arr = createVector(1);
+  
+  // We allocate a new memory block each iteration that holds pattern 
+  // identified from Text() function, and get the number of times it appears
+  // in the original DNA sequence, and assign it to a value in the count array
   unsigned int i;
-  //char * pattern  = (char *)malloc(sizeof(k));
-  // We need to declare a k_pattern array for the sole purpose of allowing the 
-  // Text() function to be able to return us the k_pattern we want to access
-  // see BA1A/PatternCount.c for the justification
-  //char * k_pattern = (char *)malloc(sizeof(k));
   int * count = (int *)malloc(sizeof(int) * (strlen(text) - k +1));
   for(i = 0; i<= (strlen(text)/sizeof(char)) - k; i++)
   {
-      char * pattern = Text(text, i, k);
-      count[i] = PatternCount(text, pattern);
+    char * pattern = Text(text, i, k);
+    count[i] = PatternCount(text, pattern);
+    free(pattern);
   }
 
-  int maxcount = count[0];
-  
-  // Naive implementation of finding max value in array
   // Simple remark: I can reuse the iteration variable i here again without 
   // declaring another separate variable
+  // Naive implementation of finding max value in array
+  // TODO: Figure out a better implementation, based on exercises from
+  // Algorithms in C++ textbook by Sedgewick
+  int maxcount = count[0];
   for(i = 0; i< (strlen(text)/sizeof(char))-k+1; i++)
   {
     if(maxcount < count[i])
@@ -164,10 +159,10 @@ vector_t * FrequentWords(char text[], int k)
     }
 
   }
-  //TODO: Implement removal of duplicate frequent pattern strings from the frequent
-  // pattern array
-  
-  return freqpat_arr;
+  free(count);
+  vector_t * freqpat_no_dup = RemoveDuplicates(freqpat_arr);
+  destroyVector(freqpat_arr); // Free the old array after the new no duplicate array is generated
+  return freqpat_no_dup;
 }
 
 
@@ -232,7 +227,7 @@ char * Text(char text[], int pos, int k)
 // Helper function to remove duplicates from frequentpatterns array
 vector_t * RemoveDuplicates(vector_t * freqpat_arr)
 {
-  vector_t * no_dup = createVector(2, 12);
+  vector_t * no_dup = createVector(2);
   int i,j;
   for(i=0; i<= freqpat_arr->size -1; i++)
   {

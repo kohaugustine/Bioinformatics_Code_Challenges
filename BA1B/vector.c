@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-vector_t * createVector(int initialSize, int k)
+// Reusing some code from ECE220 lab 9
+
+vector_t * createVector(int initialSize)
 /*
  * Function that creates a vector object type from an inital size 
  * initialSize is the number of elements that we want to vector to hold 
@@ -12,7 +14,6 @@ vector_t * createVector(int initialSize, int k)
 	vector_t * vector=(vector_t*)malloc(sizeof(vector_t));
 	vector->size=0;
 	vector->maxSize=initialSize;
-	vector->k_size = k;
 	// We allocate an array of character pointers because we will need to have
 	// multiple frequent patterns to access and they could be of varying sizes.
 	// The benefit of an array of pointers is that we would not need to worry
