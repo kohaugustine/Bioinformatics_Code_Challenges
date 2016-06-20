@@ -8,6 +8,7 @@
 int PatternCount(char text[], char pattern[]);
 char * Text(char text[], int pos, int k); 
 vector_t * FrequentWords(char text[], int k);   
+vector_t * RemoveDuplicates(vector_t * freqpat_arr);
 
 int main(int argc, char **argv)
 {
@@ -89,14 +90,19 @@ int main(int argc, char **argv)
     // just print out this one element see if it matches any of the outputs  
     printf("This is what all of the vector_t elements look like!\n");
     int i=0;
-    for(i=0; i<=41; i++)
+    for(i=0; i<=frequentpat->size-1 ; i++)
     {
       printf("%s\n", frequentpat->array[i]);
-      // TODO: Figure out why when printing out the frequent patterns strings, that 
-      // some of the strings would still have wierd characters trailing behind them
-      // that vary each time I run my program. Could it have to do with the sizing issue
-      // not taking into account space needed for null character?
     }
+    
+    printf("This is what the array looks like with duplicates removed!\n");
+    vector_t * freqpat_no_dup = RemoveDuplicates(frequentpat);
+    printf("Size of no duplicates array: %d\n", freqpat_no_dup->size);
+    for(i=0; i<= freqpat_no_dup->size -1; i++)
+    {
+      printf("%s\n", freqpat_no_dup->array[i]);
+    }
+    
   }
   
   // If no input file is provided, then we directly use hardcoded arrays
@@ -145,14 +151,10 @@ vector_t * FrequentWords(char text[], int k)
   }
 
   
-  // Loop for adding the identified frequent patterns into our collection array
+  // Loop for adding the identified frequent patterns into our frequent pattern
+  // collection array
   for(i=0; i< (strlen(text)/sizeof(char))-k+1; i++)
   {
-    // TODO: fix the bug that causes freqpat_arr to be filled with only one pattern
-    // when I should have pushed multiple patterns into the vector
-    // somehow it seems like when a new string is pushed unto the top of the vector
-    // all the previous strings that were pushed, no matter what they were, get 
-    // overwritted to become last string that got pushed...
     if(count[i] == maxcount)
     {
       char * freqpat = Text(text, i ,k);
@@ -214,14 +216,42 @@ char * Text(char text[], int pos, int k)
  */
 {
   int i;
+  // allocate one more additional character space in order to allow for null char
+  // to be inserted when constructing sub-sequence string
   char * k_mer = (char *)malloc((k + 1)*sizeof(char));
   for(i=0; i<= k-1; i++)
   {
     k_mer[i] = text[pos+i];
     //printf("iteration: %d, k_mer: %c\n", i,k_mer[i]);
     if(i == k-1)
-      k_mer[k] = '\0';
+      k_mer[k] = '\0'; //insert a null character at the end to terminate string
   }
   return k_mer;
 }
+
+// Helper function to remove duplicates from frequentpatterns array
+vector_t * RemoveDuplicates(vector_t * freqpat_arr)
+{
+  vector_t * no_dup = createVector(2, 12);
+  int i,j;
+  for(i=0; i<= freqpat_arr->size -1; i++)
+  {
+    int dup_count = 0;
+    // For a given element in freqpat array, compare it to each and every element
+    // in the no_duplicates array. If there is a repetition of element, increment
+    // the duplicate counter. 
+    for(j=0; j<=no_dup->size-1;j++)
+    {
+      if(strcmp(freqpat_arr->array[i], no_dup->array[j]) == 0)
+        dup_count++;
+    }
+    // If there is no duplicates after comparison, then it is safe to push
+    // the pattern into no_dup
+    if(dup_count==0)
+      push_back(no_dup, freqpat_arr->array[i]);
+  }
+  return no_dup;
+}
+
+
 

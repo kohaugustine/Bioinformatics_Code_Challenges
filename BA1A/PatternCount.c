@@ -137,13 +137,15 @@ char * Text(char text[], int pos, int k)
  */
 {
   int i;
-  char * k_mer = (char *)malloc((k + 1)*sizeof(char));
+  // allocate one more additional character space in order to allow for null char
+  // to be inserted when constructing sub-sequence string
+  char * k_mer = (char *)malloc((k + 1)*sizeof(char)); 
   for(i=0; i<= k-1; i++)
   {
     k_mer[i] = text[pos+i];
     //printf("iteration: %d, k_mer: %c\n", i,k_mer[i]);
     if(i == k-1)
-      k_mer[k] = '\0';
+      k_mer[k] = '\0'; //insert a null character at the end to terminate string
   }
   return k_mer;
 }
